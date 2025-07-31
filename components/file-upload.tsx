@@ -69,10 +69,19 @@ export const FileUpload = ({ endpoint, onChange, value }: FileUploadProps) => {
     <UploadDropzone
       endpoint={endpoint}
       onClientUploadComplete={(res) => {
+        console.log('Upload successful:', res);
         onChange(res?.[0].url);
       }}
       onUploadError={(error: Error) => {
-        console.error(error);
+        console.error('UploadThing Error:', error);
+        // Daha detaylı hata mesajı
+        const errorMessage = error.message.includes('FetchError') 
+          ? 'Network bağlantı hatası. Lütfen internet bağlantınızı kontrol edin.'
+          : error.message;
+        alert(`Dosya yükleme hatası: ${errorMessage}`);
+      }}
+      onUploadBegin={(fileName) => {
+        console.log('Upload started:', fileName);
       }}
     />
   );

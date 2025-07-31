@@ -177,7 +177,10 @@ export function useSSEChannel(
     setError(null);
 
     try {
-      const eventSource = new EventSource(`/api/sse/channel/${channelId}`);
+      // Electron uyumlu URL oluştur
+      const baseUrl = typeof window !== 'undefined' && (window as any).electronAPI ? 
+        'http://localhost:3000' : '';
+      const eventSource = new EventSource(`${baseUrl}/api/sse/channel/${channelId}`);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
@@ -221,11 +224,17 @@ export function useSSEChannel(
                 onNewMessages(data);
               }
 
-              // Auto-refresh the page if enabled
-              if (autoRefresh) {
+              // Auto-refresh the page if enabled (Electron'da daha güvenli)
+              if (autoRefresh && typeof window !== 'undefined') {
                 setTimeout(() => {
                   console.log(`[SSE_CHANNEL] Auto-refreshing page for new messages`);
-                  window.location.reload();
+                  // Electron'da window.location.reload() yerine daha güvenli yöntem
+                  if ((window as any).electronAPI) {
+                    // Electron'da sayfa yenileme yerine state güncelleme
+                    console.log(`[SSE_CHANNEL] Electron detected - skipping page reload`);
+                  } else {
+                    window.location.reload();
+                  }
                 }, refreshDelay);
               }
               break;

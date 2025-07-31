@@ -8,6 +8,11 @@
     "dev:https-auto": "next dev --experimental-https",
     "build": "prisma generate && next build",
     "start": "next start",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"cross-env NEXT_LOGGING_LEVEL=error npm run dev\" \"ping -n 5 127.0.0.1 >nul && cross-env NODE_ENV=development electron .\"",
+    "electron:dev:config": "cp next.config.electron.ts next.config.ts && npm run electron:dev",
+    "electron:build": "npm run build && next export && electron-builder",
+    "electron:pack": "npm run build && next export && electron-builder --dir",
     "test:n8n": "node scripts/test-n8n-enhanced-ai.ts",
     "test:n8n:webhook": "node scripts/test-n8n-enhanced-ai.ts --mode webhook",
     "test:n8n:verbose": "node scripts/test-n8n-enhanced-ai.ts --verbose",
@@ -85,10 +90,41 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
+    "concurrently": "^9.2.0",
+    "cross-env": "^10.0.0",
+    "electron": "^37.2.4",
+    "electron-builder": "^26.0.12",
     "eslint": "^9.14.0",
     "eslint-config-next": "^15.0.3",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "wait-on": "^8.0.4"
+  },
+  "main": "electron/main.js",
+  "build": {
+    "appId": "com.discordant.app",
+    "productName": "Discordant",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/favicon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/favicon.ico"
+    }
   }
 }
