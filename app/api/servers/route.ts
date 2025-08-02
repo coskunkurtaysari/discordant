@@ -37,6 +37,13 @@ export async function POST(req: Request) {
               profileId: profile.id,
               updatedAt: new Date(),
             },
+            {
+              id: uuidv4(),
+              name: "studio",
+              type: ChannelType.STUDIO,
+              profileId: profile.id,
+              updatedAt: new Date(),
+            },
           ],
         },
         members: {

@@ -37,6 +37,14 @@ declare global {
       stopRecording: () => Promise<void>;
       getStudioSettings: () => Promise<any>;
       updateStudioSettings: (settings: any) => Promise<void>;
+      
+      // Studio recording
+      saveRecording: (blob: Blob, filename: string) => Promise<{
+        success: boolean;
+        path?: string;
+        error?: string;
+      }>;
+      getRecordingsPath: () => Promise<string>;
     };
   }
 }

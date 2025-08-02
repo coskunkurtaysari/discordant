@@ -38,7 +38,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Studio settings
   getStudioSettings: () => ipcRenderer.invoke('get-studio-settings'),
-  updateStudioSettings: (settings) => ipcRenderer.invoke('update-studio-settings', settings)
+  updateStudioSettings: (settings) => ipcRenderer.invoke('update-studio-settings', settings),
+  
+  // Studio recording
+  saveRecording: (blob, filename) => ipcRenderer.invoke('save-recording', blob, filename),
+  getRecordingsPath: () => ipcRenderer.invoke('get-recordings-path')
 });
 
 // Güvenlik: Node.js API'lerini devre dışı bırak

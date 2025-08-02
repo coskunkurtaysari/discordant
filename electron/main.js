@@ -137,4 +137,36 @@ app.on('web-contents-created', (event, contents) => {
   contents.on('new-window', (event, navigationUrl) => {
     event.preventDefault();
   });
+});
+
+// Studio recording handlers
+const { ipcMain } = require('electron');
+const fs = require('fs');
+
+ipcMain.handle('save-recording', async (event, blob, filename) => {
+  try {
+    const recordingsPath = path.join(app.getPath('videos'), 'Discordant Studio');
+    
+    // Create recordings directory if it doesn't exist
+    if (!fs.existsSync(recordingsPath)) {
+      fs.mkdirSync(recordingsPath, { recursive: true });
+    }
+    
+    const filePath = path.join(recordingsPath, filename);
+    
+    // Convert blob to buffer and save
+    const arrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    fs.writeFileSync(filePath, buffer);
+    
+    return { success: true, path: filePath };
+  } catch (error) {
+    console.error('Error saving recording:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-recordings-path', async () => {
+  return path.join(app.getPath('videos'), 'Discordant Studio');
 }); 

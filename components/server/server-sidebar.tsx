@@ -6,7 +6,7 @@ import { ChannelType, MemberRole } from "@prisma/client";
 import { ServerHeader } from "@/components/server/server-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ServerSearch } from "@/components/server/server-search";
-import { Hash, Mic, ShieldCheck, Video } from "lucide-react";
+import { Hash, Mic, ShieldCheck, Video, Disc3 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ServerSection } from "@/components/server/server-section";
 import { ServerChannel } from "@/components/server/server-channel";
@@ -19,6 +19,7 @@ const iconMap = {
   [ChannelType.TEXT]: <Hash className="mr-2 h-4 w-4" />,
   [ChannelType.AUDIO]: <Mic className="mr-2 h-4 w-4" />,
   [ChannelType.VIDEO]: <Video className="mr-2 h-4 w-4" />,
+  [ChannelType.STUDIO]: <Disc3 className="mr-2 h-4 w-4" />,
 };
 const roleIconMap = {
   [MemberRole.GUEST]: null,
@@ -52,6 +53,9 @@ export const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
   const textChannels = server?.channels.filter((channel) => {
     return channel.type === ChannelType.TEXT;
   });
+  const studioChannels = server?.channels.filter((channel) => {
+    return channel.type === ChannelType.STUDIO;
+  });
   const audioChannels = server?.channels.filter((channel) => {
     return channel.type === ChannelType.AUDIO;
   });
@@ -71,7 +75,7 @@ export const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
   )?.role;
 
   return (
-    <div className="flex flex-col h-full text-white w-full bg-sidebar dark:bg-sidebar">
+    <div className="flex flex-col h-full text-white w-full" style={{ backgroundColor: '#121212' }}>
       <ServerHeader
         server={server}
         role={role}
@@ -191,6 +195,26 @@ export const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
             <div className="space-y-[2px]">
               {members.map((member) => (
                 <ServerMember key={member.id} member={member} server={server} />
+              ))}
+            </div>
+          </div>
+        )}
+        {!!studioChannels?.length && (
+          <div className="mb-2">
+            <ServerSection
+              sectionType="channels"
+              channelType={ChannelType.STUDIO}
+              role={role}
+              label="Studio Channels"
+            />
+            <div className="space-y-[2px]">
+              {studioChannels.map((channel) => (
+                <ServerChannel
+                  key={channel.id}
+                  channel={channel}
+                  server={server}
+                  role={role}
+                />
               ))}
             </div>
           </div>

@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { 
   Loader2, Mic, MicOff, Video, VideoOff, Monitor, Settings, 
   Wifi, WifiOff, Users, Share2, Square, Play, Pause,
-  Volume2, VolumeX, Maximize2, Minimize2, RotateCcw, CircleDot
+  Volume2, VolumeX, Maximize2, Minimize2, RotateCcw, CircleDot, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -354,7 +354,7 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
     }
   };
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (isRecording) {
       if (recordingRef.current) {
         recordingRef.current.stop();
@@ -362,11 +362,60 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
       }
     } else {
       if (localStream) {
-        recordingRef.current = new MediaRecorder(localStream);
+        const chunks: Blob[] = [];
+        recordingRef.current = new MediaRecorder(localStream, {
+          mimeType: 'video/webm;codecs=vp9'
+        });
+        
+        recordingRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+        
+        recordingRef.current.onstop = async () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const filename = `studio-recording-${new Date().toISOString()}.webm`;
+          
+          // Check if we're in Electron
+          if (window.electronAPI) {
+            try {
+              const result = await window.electronAPI.saveRecording(blob, filename);
+              if (result.success) {
+                console.log('Recording saved to:', result.path);
+                // Show success notification
+                alert(`Recording saved to: ${result.path}`);
+              } else {
+                console.error('Failed to save recording:', result.error);
+                // Fallback to download
+                downloadRecording(blob, filename);
+              }
+            } catch (error) {
+              console.error('Error saving recording:', error);
+              // Fallback to download
+              downloadRecording(blob, filename);
+            }
+          } else {
+            // Browser fallback - download file
+            downloadRecording(blob, filename);
+          }
+        };
+        
         recordingRef.current.start();
         setIsRecording(true);
       }
     }
+  };
+  
+  const downloadRecording = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const toggleFullscreen = () => {
@@ -379,48 +428,78 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
     }
   };
 
+  const exitStudio = () => {
+    // Cleanup before exiting
+    cleanup();
+    
+    // Go back to server page
+    if (typeof window !== 'undefined') {
+      // Extract serverId from current URL
+      const pathParts = window.location.pathname.split('/');
+      const serverIdIndex = pathParts.findIndex(part => part === 'servers') + 1;
+      if (serverIdIndex > 0 && pathParts[serverIdIndex]) {
+        const serverId = pathParts[serverIdIndex];
+        window.location.href = `/servers/${serverId}`;
+      } else {
+        // Fallback to main page
+        window.location.href = '/';
+      }
+    }
+  };
+
   return (
-    <div className="h-full bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]">
+    <div className="h-full bg-gradient-to-br from-orange-400/20 to-orange-300/15 dark:from-orange-500/25 dark:to-orange-400/20">
       {/* Studio Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10 p-4">
+      <div className="bg-orange-400/10 backdrop-blur-sm border-b border-orange-300/20 p-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-white text-xl font-bold">{channelName}</h1>
             <p className="text-white/70 text-sm">{serverName} Studio</p>
           </div>
-          <div className="flex items-center space-x-4">
-            {/* Connection Status */}
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                isConnected ? 'bg-green-500' : 'bg-red-500'
-              } animate-pulse`}></div>
-              <span className="text-white text-sm">
-                {isConnected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
+                     <div className="flex items-center space-x-4">
+             {/* Connection Status */}
+             <div className="flex items-center space-x-2">
+               <div className={`w-3 h-3 rounded-full ${
+                 isConnected ? 'bg-green-500' : 'bg-red-500'
+               } animate-pulse`}></div>
+               <span className="text-white text-sm">
+                 {isConnected ? 'Connected' : 'Disconnected'}
+               </span>
+             </div>
 
-            {/* Latency Indicator */}
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                latency < 30 ? 'bg-green-500' : 
-                latency < 100 ? 'bg-yellow-500' : 'bg-red-500'
-              } animate-pulse`}></div>
-              <span className="text-white text-sm font-mono">
-                {latency}ms
-              </span>
-            </div>
+             {/* Latency Indicator */}
+             <div className="flex items-center space-x-2">
+               <div className={`w-3 h-3 rounded-full ${
+                 latency < 30 ? 'bg-green-500' : 
+                 latency < 100 ? 'bg-yellow-500' : 'bg-red-500'
+               } animate-pulse`}></div>
+               <span className="text-white text-sm font-mono">
+                 {latency}ms
+               </span>
+             </div>
 
-            {/* Participants */}
-            <div className="flex items-center space-x-1">
-              <Users className="h-4 w-4 text-white" />
-              <span className="text-white text-sm">{participantCount}</span>
-            </div>
+             {/* Participants */}
+             <div className="flex items-center space-x-1">
+               <Users className="h-4 w-4 text-white" />
+               <span className="text-white text-sm">{participantCount}</span>
+             </div>
 
-            {/* Studio Badge */}
-            <Badge variant="destructive" className="bg-red-500/20 text-red-400">
-              STUDIO
-            </Badge>
-          </div>
+             {/* Studio Badge */}
+             <Badge variant="destructive" className="bg-red-500/20 text-red-400">
+               STUDIO
+             </Badge>
+
+             {/* Exit Button */}
+             <Button
+               onClick={exitStudio}
+               variant="destructive"
+               size="sm"
+               className="bg-red-600 hover:bg-red-700 text-white"
+             >
+               <X className="h-4 w-4 mr-1" />
+               Exit Studio
+             </Button>
+           </div>
         </div>
       </div>
 
@@ -428,7 +507,7 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
       <div className="flex-1 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
           {/* Local Video */}
-          <div className="relative bg-black/20 rounded-lg overflow-hidden">
+          <div className="relative bg-orange-400/8 rounded-lg overflow-hidden">
             <video
               ref={localVideoRef}
               autoPlay
@@ -449,7 +528,7 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
 
           {/* Remote Videos */}
           {Array.from(remoteStreams.entries()).map(([userId, stream]) => (
-            <div key={userId} className="relative bg-black/20 rounded-lg overflow-hidden">
+            <div key={userId} className="relative bg-orange-400/8 rounded-lg overflow-hidden">
               <video
                 autoPlay
                 playsInline
@@ -467,7 +546,7 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
       </div>
 
       {/* Studio Controls */}
-      <div className="bg-black/20 backdrop-blur-sm border-t border-white/10 p-4">
+      <div className="bg-orange-400/10 backdrop-blur-sm border-t border-orange-300/20 p-4">
         <div className="flex items-center justify-center space-x-4">
           {/* Audio Controls */}
           <Button
@@ -537,12 +616,22 @@ export const StudioChannel = ({ channelId, channelName, serverName }: StudioChan
             {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </Button>
 
-          {/* Latency Display */}
-          <div className="bg-black/30 px-4 py-2 rounded-full">
-            <span className="text-white text-sm font-mono">
-              {latency}ms Latency
-            </span>
-          </div>
+                               {/* Latency Display */}
+          <div className="bg-orange-400/15 px-4 py-2 rounded-full">
+             <span className="text-white text-sm font-mono">
+               {latency}ms Latency
+             </span>
+           </div>
+
+           {/* Exit Studio Button */}
+           <Button
+             onClick={exitStudio}
+             variant="destructive"
+             size="lg"
+             className="rounded-full w-12 h-12 bg-red-600 hover:bg-red-700"
+           >
+             <X className="h-5 w-5" />
+           </Button>
         </div>
       </div>
     </div>
