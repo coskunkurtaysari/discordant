@@ -19,7 +19,12 @@
     "test:async": "node scripts/test-async-workflow.js",
     "test:async:dev": "node scripts/test-async-workflow.js --env development",
     "fix:workflow-version": "node scripts/fix-workflow-version.js",
-    "test:n8n:quick": "node scripts/quick-n8n-test.js"
+    "test:n8n:quick": "node scripts/quick-n8n-test.js",
+    "ultra-latency": "node server/ultra-low-latency-server.js",
+    "dev:ultra": "concurrently \"npm run dev\" \"npm run ultra-latency\"",
+    "studio": "npm run ultra-latency",
+    "electron:studio": "concurrently \"npm run dev\" \"npm run ultra-latency\" \"npm run electron:dev\"",
+    "test:electron-studio": "chmod +x scripts/test-electron-studio.sh && ./scripts/test-electron-studio.sh"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.2.1",
@@ -47,6 +52,7 @@
     "@radix-ui/react-visually-hidden": "^1.1.0",
     "@supabase/supabase-js": "^2.47.8",
     "@tanstack/react-query": "^5.59.20",
+    "@types/ws": "^8.18.1",
     "@uploadthing/react": "^7.1.1",
     "@vercel/analytics": "^1.4.1",
     "axios": "^1.7.7",
@@ -82,6 +88,7 @@
     "uploadthing": "^7.3.0",
     "uuid": "^11.0.2",
     "vaul": "^1.1.2",
+    "ws": "^8.18.3",
     "zod": "^3.23.8",
     "zustand": "^5.0.1"
   },

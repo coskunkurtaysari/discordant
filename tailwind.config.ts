@@ -58,7 +58,7 @@ const config: Config = {
       },
       backgroundImage: {
         "custom-gradient":
-          "linear-gradient(0deg, #b388eb, #9f7ce4, #8a6fde, #7b5bd8, #6f47d0, #5c34c4, #4a24b8, #3d1d9f, #341788, #2e1273, #270d5e, #210849, #3d1d9f, #5c34c4, #8a6fde)",
+          "linear-gradient(0deg, #0a0a0a, #0f0f0f, #1a1a1a, #2a2a2a, #3a3a3a, #4a4a4a, #505050)",
         "overlay-pattern": `radial-gradient(circle at 20% 20%, #ffffff33 20px, transparent 0),
                             radial-gradient(circle at 80% 40%, #ffffff33 25px, transparent 0),
                             radial-gradient(circle at 40% 80%, #ffffff33 30px, transparent 0),

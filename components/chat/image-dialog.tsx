@@ -71,7 +71,7 @@ export const ImageDialog = ({ isOpen, onClose, imageUrl, fileType }: ImageDialog
       <DialogContent
         className={cn(
           "max-w-[95vw] w-full h-[90vh] p-0 border-none",
-          "bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]"
+          "bg-card dark:bg-card"
         )}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}

@@ -350,7 +350,7 @@ function EmbeddedChatWidget() {
 
 function LoadingFallback() {
   return (
-    <div className="flex items-center justify-center h-full bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]">
+            <div className="flex items-center justify-center h-full bg-background dark:bg-background">
       <div className="text-center">
         <MessageCircle className="mx-auto h-12 w-12 text-white/70 mb-4 animate-pulse" />
         <p className="text-white/90 font-medium">Loading chat widget...</p>

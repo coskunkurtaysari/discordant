@@ -103,13 +103,13 @@ export const CreateChannelModal = () => {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-0 overflow-hidden">
+      <DialogContent className="bg-card dark:bg-card p-0 overflow-hidden">
         <DialogHeader className="pt-8 px-6">
           <DialogTitle className="text-4xl text-center font-bold text-white">
             Create channel
           </DialogTitle>
           <DialogDescription className="text-center text-zinc-400">
-            Create a text, audio or video channel
+            Create a text, audio, video or studio channel
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -126,7 +126,7 @@ export const CreateChannelModal = () => {
                     <FormControl>
                       <Input
                         disabled={isLoading}
-                        className="border-0 bg-zinc-300/50 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
+                        className="border-0 bg-input focus-visible:ring-0 text-foreground focus-visible:ring-offset-0"
                         placeholder="Enter a channel name"
                         {...field}
                       />
@@ -152,7 +152,7 @@ export const CreateChannelModal = () => {
                       disabled={isLoading}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-zinc-300/50 border-0 focus:ring-0 text-black ring-offset-0 capitalize focus:ring-offset-0 outline-none">
+                        <SelectTrigger className="bg-input border-0 focus:ring-0 text-foreground ring-offset-0 capitalize focus:ring-offset-0 outline-none">
                           <SelectValue placeholder="Select a channel type" />
                         </SelectTrigger>
                       </FormControl>
@@ -176,7 +176,7 @@ export const CreateChannelModal = () => {
                 )}
               />
             </div>
-            <DialogFooter className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] px-6 py-4">
+            <DialogFooter className="bg-muted dark:bg-muted px-6 py-4">
               <Button variant="primary" disabled={isLoading}>
                 Create
               </Button>

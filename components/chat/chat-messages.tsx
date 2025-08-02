@@ -263,7 +263,7 @@ export const ChatMessages = ({
 
   if (status === "error" && !paginationError) {
     return (
-      <div className="flex flex-col flex-1 justify-center items-center bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-6">
+              <div className="flex flex-col flex-1 justify-center items-center bg-message dark:bg-message p-6">
         <ServerCrash className="h-8 w-8 text-red-400 my-4" />
         <h3 className="text-lg font-semibold text-white mb-2">Unable to Load Messages</h3>
         <p className="text-sm text-zinc-300 mb-4 text-center max-w-md">
@@ -297,7 +297,7 @@ export const ChatMessages = ({
   const messagesToDisplay = isFiltering ? filteredMessages : allMessages;
 
   return (
-    <div className="relative h-full flex flex-col bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]">
+          <div className="relative h-full flex flex-col bg-message dark:bg-message">
       {/* Search Bar positioned over the messages - mobile friendly */}
       {onSearchChange && onClearSearch && (
         <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10 flex justify-end">

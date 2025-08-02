@@ -41,7 +41,7 @@ export const DeleteServerModal = () => {
   return (
     <>
       <Dialog open={isModalOpen} onOpenChange={onClose}>
-        <DialogContent className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-0 overflow-hidden">
+        <DialogContent className="bg-card dark:bg-card p-0 overflow-hidden">
           <DialogHeader className="pt-8 px-6">
             <DialogTitle className="text-4xl text-center font-bold mb-3 text-zinc-200">
               Delete Server?

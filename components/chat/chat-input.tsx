@@ -93,7 +93,7 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <div className="relative p-4 pb-6 bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]">
+                <div className="relative p-4 pb-6 bg-background dark:bg-background">
                   <button
                     type="button"
                     onClick={() => onOpen("messageFile", { apiUrl, query })}

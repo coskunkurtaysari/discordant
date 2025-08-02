@@ -88,7 +88,7 @@ const DashboardPage = async () => {
   });
 
   return (
-    <div className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] flex-1">
+            <div className="bg-background dark:bg-background flex-1">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

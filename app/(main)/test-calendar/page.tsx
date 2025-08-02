@@ -179,7 +179,7 @@ export default function TestCalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-4">
+    <div className="min-h-screen bg-background dark:bg-background p-4">
       <div className="max-w-4xl mx-auto h-[calc(100vh-2rem)] flex flex-col">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow-xl p-4 border-b border-gray-200 dark:border-gray-700">

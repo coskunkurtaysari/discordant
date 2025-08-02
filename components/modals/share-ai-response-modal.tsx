@@ -109,7 +109,7 @@ export const ShareAIResponseModal = () => {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-0 overflow-hidden max-w-md">
+              <DialogContent className="bg-card dark:bg-card p-0 overflow-hidden max-w-md">
         <DialogHeader className="pt-6 px-6">
           <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
             <Bot className="w-5 h-5 text-purple-300" />

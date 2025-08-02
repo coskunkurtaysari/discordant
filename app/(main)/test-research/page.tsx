@@ -66,7 +66,7 @@ export default function TestResearchPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-6">
+          <div className="flex flex-col h-full bg-background dark:bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <Card>
           <CardHeader>

@@ -75,7 +75,7 @@ export const ServerSearch = ({ data }: ServerSearchProps) => {
         </kbd>
       </button>
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <div className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]">
+        <div className="bg-card dark:bg-card">
           <VisuallyHidden>
             <DialogTitle>Search Channels and Members</DialogTitle>
           </VisuallyHidden>

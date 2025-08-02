@@ -20,7 +20,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
   
   // Bildirimler
-  showNotification: (title, body) => ipcRenderer.send('show-notification', title, body)
+  showNotification: (title, body) => ipcRenderer.send('show-notification', title, body),
+  
+  // Studio channel için ek API'ler
+  // Media permissions
+  requestMediaPermissions: () => ipcRenderer.invoke('request-media-permissions'),
+  
+  // Hardware info
+  getHardwareInfo: () => ipcRenderer.invoke('get-hardware-info'),
+  
+  // Performance monitoring
+  getPerformanceStats: () => ipcRenderer.invoke('get-performance-stats'),
+  
+  // Studio recording
+  startRecording: (options) => ipcRenderer.invoke('start-recording', options),
+  stopRecording: () => ipcRenderer.invoke('stop-recording'),
+  
+  // Studio settings
+  getStudioSettings: () => ipcRenderer.invoke('get-studio-settings'),
+  updateStudioSettings: (settings) => ipcRenderer.invoke('update-studio-settings', settings)
 });
 
 // Güvenlik: Node.js API'lerini devre dışı bırak

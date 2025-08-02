@@ -5,14 +5,14 @@ const isDev = process.env.NODE_ENV === 'development';
 function createWindow() {
   // Ana pencereyi oluştur
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1400,
+    height: 900,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
-      // API route'ları için güvenlik ayarları
+      // Studio channel için gerekli ayarlar
       webSecurity: false, // CORS sorunları için geçici olarak devre dışı
       allowRunningInsecureContent: true, // CORS sorunları için geçici olarak açık
       // Network ayarları
@@ -28,11 +28,25 @@ function createWindow() {
       // CAPTCHA için ek ayarlar
       sandbox: false,
       webgl: true,
-      plugins: true
+      plugins: true,
+      // Studio channel için ek ayarlar
+      enableWebCodecs: true, // Video codec desteği
+      enableBlinkFeatures: 'WebCodecs,WebRTC,WebRTCPipeWireCapture',
+      // Media capture için gerekli izinler
+      permissions: ['microphone', 'camera', 'display-capture']
     },
     icon: path.join(__dirname, '../public/favicon.ico'),
     titleBarStyle: 'default',
-    show: false
+    show: false,
+    // Studio channel için ek ayarlar
+    minWidth: 800,
+    minHeight: 600,
+    // Fullscreen desteği
+    fullscreenable: true,
+    // Hardware acceleration
+    webPreferences: {
+      hardwareAcceleration: true
+    }
   });
 
   // Pencere hazır olduğunda göster

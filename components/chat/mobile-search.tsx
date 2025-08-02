@@ -235,7 +235,7 @@ export function MobileSearch({
         <DialogContent className="h-full w-full max-w-none m-0 p-0 border-none md:hidden">
           <div className="flex flex-col h-full bg-white dark:bg-gray-900">
             {/* Mobile Header */}
-            <div className="flex items-center gap-3 p-4 border-b bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666]">
+            <div className="flex items-center gap-3 p-4 border-b bg-header dark:bg-header">
               <Button
                 variant="ghost"
                 size="sm"

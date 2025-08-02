@@ -6,6 +6,8 @@ import { AccessToken } from "livekit-server-sdk";
 export async function GET(req: NextRequest) {
   const room = req.nextUrl.searchParams.get("room");
   const username = req.nextUrl.searchParams.get("username");
+  const studioMode = req.nextUrl.searchParams.get("studio") === "true";
+  
   if (!room) {
     return NextResponse.json(
       { error: 'Missing "room" query parameter' },
@@ -31,7 +33,32 @@ export async function GET(req: NextRequest) {
 
   const at = new AccessToken(apiKey, apiSecret, { identity: username });
 
-  at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true });
+  // Enhanced permissions for studio mode
+  if (studioMode) {
+    at.addGrant({ 
+      room, 
+      roomJoin: true, 
+      canPublish: true, 
+      canSubscribe: true,
+      canPublishData: true,
+      canUpdateMetadata: true,
+      // Studio-specific permissions
+      canPublishAudio: true,
+      canPublishVideo: true,
+      canPublishScreen: true,
+      canPublishScreenAudio: true
+    });
+  } else {
+    at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true });
+  }
 
-  return NextResponse.json({ token: await at.toJwt() });
+  // Studio mode: longer token expiry for extended sessions
+  const ttl = studioMode ? 3600 * 24 : 3600; // 24 hours for studio, 1 hour for regular
+  at.ttl = ttl;
+
+  return NextResponse.json({ 
+    token: await at.toJwt(),
+    studioMode,
+    ttl
+  });
 }

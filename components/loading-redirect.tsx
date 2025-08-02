@@ -32,7 +32,7 @@ const LoadingRedirect = ({
     <>
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] rounded-xl shadow-lg p-6 w-full max-w-sm mx-4 transform transition-all">
+          <div className="bg-card dark:bg-card rounded-xl shadow-lg p-6 w-full max-w-sm mx-4 transform transition-all">
             <div className="flex items-center justify-center space-x-4">
               <Loader2 className="h-6 w-6 animate-spin text-zinc-200" />
               <p className="text-lg font-semibold text-zinc-200">

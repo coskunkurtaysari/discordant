@@ -341,7 +341,7 @@ const ChatItemComponent = ({
                   render={({ field }) => (
                     <FormItem className="flex-1">
                       <FormControl>
-                        <div className="relative p-4 pb-6 bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] rounded-lg">
+                        <div className="relative p-4 pb-6 bg-message dark:bg-message rounded-lg">
                           <div className="px-4 pr-20">
                             <Textarea
                               placeholder="Edit your message..."

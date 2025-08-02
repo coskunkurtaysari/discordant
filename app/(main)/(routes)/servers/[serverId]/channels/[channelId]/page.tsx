@@ -4,6 +4,7 @@ import { Metadata } from "next";
 import { ChannelChatWrapper } from "@/components/chat/channel-chat-wrapper";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { MediaRoom } from "@/components/media-room";
+import { StudioChannel } from "@/components/studio-channel";
 import { currentProfile } from "@/lib/current-profile";
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
@@ -94,6 +95,13 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
         )}
         {channel.type === ChannelType.VIDEO && (
           <MediaRoom chatId={channel.id} video={true} audio={true} />
+        )}
+        {channel.type === ChannelType.STUDIO && (
+          <StudioChannel 
+            channelId={channel.id} 
+            channelName={channel.name}
+            serverName={server?.name || "Server"}
+          />
         )}
       </div>
     </div>

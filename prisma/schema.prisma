@@ -116,6 +116,7 @@ enum ChannelType {
   TEXT
   AUDIO
   VIDEO
+  STUDIO
 
   @@map("channel_type")
 }

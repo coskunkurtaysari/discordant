@@ -22,7 +22,7 @@ const EnvironmentConfigPage = async () => {
   // }
   
   return (
-    <div className="bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] min-h-screen">
+          <div className="bg-background dark:bg-background min-h-screen">
       <EnvironmentConfigPanel />
     </div>
   );

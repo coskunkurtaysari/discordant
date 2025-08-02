@@ -100,7 +100,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({ error, resetError 
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] p-4">
+          <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background p-4">
       <div className="max-w-md w-full bg-white/10 backdrop-blur-sm rounded-lg shadow-lg p-6 text-center">
         <div className="flex justify-center mb-4">
           <AlertTriangle className="h-12 w-12 text-red-400" />

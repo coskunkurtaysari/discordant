@@ -84,44 +84,44 @@ body {
   }
   
   .dark {
-    /* Keep existing dark theme but enhanced */
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
+    /* Spotify-inspired Dark Theme */
+    --background: 0 0% 7%;      /* #121212 */
+    --foreground: 0 0% 98%;
+    --card: 0 0% 9%;           /* #1a1a1a */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 76% 36%;    /* Spotify Green */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 8%;      /* #141414 */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 263.4 70% 50.4%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 8%;
+    --input: 0 0% 8%;
+    --ring: 142 76% 36%;
     --radius: 0.75rem;
     
-    /* Enhanced Chart Colors for Dark Mode */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Spotify-inspired Chart Colors */
+    --chart-1: 142 76% 36%;    /* Spotify Green */
+    --chart-2: 142 76% 42%;
+    --chart-3: 142 76% 48%;
+    --chart-4: 142 76% 54%;
+    --chart-5: 142 76% 60%;
     
-    /* Custom Discord-like Dark Theme Colors */
-    --sidebar-bg: 223 6.9% 20%;
-    --sidebar-hover: 223 6.9% 25%;
-    --message-bg: 220 6.5% 18%;
-    --message-hover: 220 6.5% 21%;
-    --channel-active: 263.4 70% 50.4%;
-    --member-bg: 223 6.9% 20%;
-    --header-bg: 224 71.4% 4.1%;
-    --input-bg: 215 27.9% 16.9%;
+    /* Spotify-inspired Theme Colors */
+    --sidebar-bg: 0 0% 4%;     /* #0a0a0a - En koyu */
+    --sidebar-hover: 0 0% 6%;
+    --message-bg: 0 0% 9%;     /* #1a1a1a - Orta */
+    --message-hover: 0 0% 11%;
+    --channel-active: 0 0% 8%; /* #141414 - Seçili kanal */
+    --member-bg: 0 0% 4%;
+    --header-bg: 0 0% 7%;      /* #121212 - Ana arka plan */
+    --input-bg: 0 0% 8%;
   }
 }
 

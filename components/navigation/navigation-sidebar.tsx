@@ -25,7 +25,7 @@ export const NavigationSidebar = async () => {
     },
   });
   return (
-    <div className="space-y-4 flex flex-col items-center h-full text-white w-full bg-gradient-to-br from-[#7364c0] to-[#02264a] dark:from-[#000C2F] dark:to-[#003666] py-3">
+    <div className="space-y-4 flex flex-col items-center h-full text-white w-full bg-sidebar dark:bg-sidebar py-3">
       <NavigationAction />
       <Separator className="h-[2px] bg-zinc-300 dark:bg-zinc-700 rounded-md w-10 mx-auto" />
       <ScrollArea className="flex-1 w-full">
