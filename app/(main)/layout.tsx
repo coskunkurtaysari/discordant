@@ -1,8 +1,12 @@
 // /app/(main)/layout.tsx
 
 import { NavigationSidebar } from "@/components/navigation/navigation-sidebar";
+import { PersonalStudioSidebar } from "@/components/navigation/personal-studio-sidebar";
+import { currentProfile } from "@/lib/current-profile";
 
 const MainLayout = async ({ children }: { children: React.ReactNode }) => {
+  const profile = await currentProfile();
+
   return (
     <>
       <div className="h-full">

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NavigationItem } from "./navigation-item";
 import { NavigationMenu } from "@/components/navigation/navigation-menu";
+import { SidebarPersonalAvatar } from "./sidebar-personal-avatar";
 
 export const NavigationSidebar = async () => {
   const profile = await currentProfile();
@@ -24,10 +25,23 @@ export const NavigationSidebar = async () => {
       },
     },
   });
+  
   return (
     <div className="space-y-4 flex flex-col items-center h-full text-white w-full bg-sidebar dark:bg-sidebar py-3">
-      <NavigationAction />
+      {/* Personal Studio Avatar at Top */}
+      <div className="flex flex-col items-center space-y-2">
+        <SignedIn>
+          <SidebarPersonalAvatar profile={profile} />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+      </div>
+
+      {/* Separator Line */}
       <Separator className="h-[2px] bg-zinc-300 dark:bg-zinc-700 rounded-md w-10 mx-auto" />
+
+      {/* Server List in Middle */}
       <ScrollArea className="flex-1 w-full">
         {servers.map((server) => (
           <div key={server.id} className="mb-4">
@@ -39,11 +53,13 @@ export const NavigationSidebar = async () => {
           </div>
         ))}
       </ScrollArea>
+
+      {/* Add Server and Explore at Bottom */}
       <div className="flex pb-3 mt-auto items-center flex-col gap-y-4">
+        <NavigationAction />
         <NavigationMenu />
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
+        
+        {/* User Profile at Bottom */}
         <SignedIn>
           <UserButton
             appearance={{
@@ -53,6 +69,9 @@ export const NavigationSidebar = async () => {
             }}
           />
         </SignedIn>
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
       </div>
     </div>
   );

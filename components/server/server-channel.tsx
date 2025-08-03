@@ -59,7 +59,7 @@ export const ServerChannel = ({
           channel.type === ChannelType.STUDIO && "text-orange-600 dark:text-orange-400 font-bold text-base"
         )}
       >
-        {channel.name}
+        {channel.type === ChannelType.STUDIO ? channel.name.toUpperCase() : channel.name}
       </p>
       {role !== MemberRole.GUEST && (
         <div className="ml-auto flex items-center gap-x-2">
