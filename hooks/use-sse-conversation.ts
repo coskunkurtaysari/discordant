@@ -22,7 +22,7 @@ interface UseSSEConversationOptions {
   refreshDelay?: number;
 }
 
-// Reuse the same activity tracker from channel hook
+// Activity tracking for intelligent decay
 class ActivityTracker {
   private lastActivity: number = Date.now();
   private lastMessage: number = 0;
@@ -118,7 +118,7 @@ class ActivityTracker {
   }
 }
 
-// Global activity tracker instance (shared with channel hook)
+// Global activity tracker instance
 const activityTracker = new ActivityTracker();
 
 export function useSSEConversation(
@@ -177,7 +177,10 @@ export function useSSEConversation(
     setError(null);
 
     try {
-      const eventSource = new EventSource(`/api/sse/conversation/${conversationId}`);
+      // Electron uyumlu URL oluştur
+      const baseUrl = typeof window !== 'undefined' && (window as any).electronAPI ? 
+        'http://localhost:3000' : '';
+      const eventSource = new EventSource(`${baseUrl}/api/sse/conversation/${conversationId}`);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
@@ -221,11 +224,17 @@ export function useSSEConversation(
                 onNewMessages(data);
               }
 
-              // Auto-refresh the page if enabled
-              if (autoRefresh) {
+              // Auto-refresh the page if enabled (Electron'da daha güvenli)
+              if (autoRefresh && typeof window !== 'undefined') {
                 setTimeout(() => {
                   console.log(`[SSE_CONVERSATION] Auto-refreshing page for new messages`);
-                  window.location.reload();
+                  // Electron'da window.location.reload() yerine daha güvenli yöntem
+                  if ((window as any).electronAPI) {
+                    // Electron'da sayfa yenileme yerine state güncelleme
+                    console.log(`[SSE_CONVERSATION] Electron detected - skipping page reload`);
+                  } else {
+                    window.location.reload();
+                  }
                 }, refreshDelay);
               }
               break;
@@ -317,7 +326,7 @@ export function useSSEConversation(
     } else {
       disconnect();
     }
-  }, [conversationId]); // Only depend on conversationId
+  }, [conversationId]); // Only depend on conversationId, not connect/disconnect
 
   // Cleanup on unmount
   useEffect(() => {

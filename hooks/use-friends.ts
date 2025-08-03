@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 interface Friend {
   id: string;
   name: string;
   status: "online" | "offline" | "away" | "idle" | "dnd";
   avatar?: string;
-  lastSeen?: string;
+  email?: string;
+  createdAt?: string;
 }
 
 interface FriendRequest {
@@ -15,91 +17,178 @@ interface FriendRequest {
   avatar?: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
 export const useFriends = () => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isSignedIn, userId } = useAuth();
 
-  useEffect(() => {
-    const fetchFriends = async () => {
+  // Arkadaş listesini yeniden yükleme fonksiyonu
+  const refreshFriends = async () => {
       try {
         setIsLoading(true);
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/friends');
-        // const data = await response.json();
-        
-        // Mock data for now
-        const mockFriends: Friend[] = [
-          { id: "1", name: "Sahte Kullanıcı 1", status: "online" },
-          { id: "2", name: "Sahte Kullanıcı 2", status: "online" },
-        ];
+      setError(null);
+      
+      if (!isSignedIn || !userId) {
+        console.log("User not authenticated");
+        setFriends([]);
+        setIsLoading(false);
+        return;
+      }
 
-        const mockRequests: FriendRequest[] = [
-          { id: "1", name: "Sahte Kullanıcı 3", sentAt: "2 saat önce" },
-          { id: "2", name: "Sahte Kullanıcı 4", sentAt: "1 gün önce" },
-          { id: "3", name: "Sahte Kullanıcı 5", sentAt: "3 gün önce" },
-          { id: "4", name: "Sahte Kullanıcı 6", sentAt: "5 gün önce" },
-          { id: "5", name: "Sahte Kullanıcı 7", sentAt: "1 hafta önce" },
-        ];
-
-        setFriends(mockFriends);
-        setPendingRequests(mockRequests);
+      const response = await fetch('/api/friends', {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (Array.isArray(data)) {
+        setFriends(data);
+        console.log("Friends loaded:", data);
+      } else {
+        setFriends([]);
+      }
       } catch (err) {
-        setError("Arkadaşlar yüklenirken hata oluştu");
         console.error("Error fetching friends:", err);
+      setFriends([]);
+      setError(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFriends();
-  }, []);
+  // İlk yükleme
+  useEffect(() => {
+    refreshFriends();
+  }, [isSignedIn, userId]);
 
-  const addFriend = async (username: string) => {
+  // Real-time güncelleme için interval (her 30 saniyede bir)
+  useEffect(() => {
+    if (!isSignedIn || !userId) return;
+
+    const interval = setInterval(() => {
+      refreshFriends();
+    }, 30000); // 30 saniye
+
+    return () => clearInterval(interval);
+  }, [isSignedIn, userId]);
+
+  const addFriend = async (username: string): Promise<ApiResponse<any>> => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/friends/add', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ username })
-      // });
-      
-      console.log("Friend request sent to:", username);
-      return { success: true };
+      if (!isSignedIn || !userId) {
+        return { 
+          success: false, 
+          error: "Giriş yapmanız gerekiyor" 
+        };
+      }
+
+      const response = await fetch('/api/friends', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ username }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { 
+          success: false, 
+          error: data.message || `HTTP ${response.status}: ${response.statusText}` 
+        };
+      }
+
+      // Arkadaş başarıyla eklendiyse listeyi hemen yenile
+      if (data.success) {
+        await refreshFriends();
+      }
+
+      return { 
+        success: true, 
+        data: data,
+        message: data.message 
+      };
     } catch (err) {
       console.error("Error adding friend:", err);
       return { success: false, error: "Arkadaş eklenirken hata oluştu" };
     }
   };
 
-  const acceptFriendRequest = async (requestId: string) => {
+  const removeFriend = async (friendId: string): Promise<ApiResponse<any>> => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/friends/accept/${requestId}`, {
-      //   method: 'POST'
-      // });
+      if (!isSignedIn || !userId) {
+        return { 
+          success: false, 
+          error: "Giriş yapmanız gerekiyor" 
+        };
+      }
+
+      const response = await fetch(`/api/friends?friendId=${friendId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        return { 
+          success: false, 
+          error: data.message || `HTTP ${response.status}: ${response.statusText}` 
+        };
+      }
+
+      // Arkadaş başarıyla çıkarıldıysa listeyi hemen yenile
+      const data = await response.json();
+      if (data.success) {
+        await refreshFriends();
+      }
       
-      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
       return { success: true };
     } catch (err) {
-      console.error("Error accepting friend request:", err);
-      return { success: false, error: "İstek kabul edilirken hata oluştu" };
+      console.error("Error removing friend:", err);
+      return { success: false, error: "Arkadaş çıkarılırken hata oluştu" };
     }
   };
 
-  const rejectFriendRequest = async (requestId: string) => {
+  const acceptFriendRequest = async (requestId: string): Promise<ApiResponse<any>> => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/friends/reject/${requestId}`, {
-      //   method: 'POST'
-      // });
-      
-      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-      return { success: true };
+      // TODO: Implement accept friend request API
+      console.log("Accepting friend request:", requestId);
+      return { success: true, message: "Arkadaşlık isteği kabul edildi" };
+    } catch (err) {
+      console.error("Error accepting friend request:", err);
+      return { success: false, error: "Arkadaşlık isteği kabul edilirken hata oluştu" };
+    }
+  };
+
+  const rejectFriendRequest = async (requestId: string): Promise<ApiResponse<any>> => {
+    try {
+      // TODO: Implement reject friend request API
+      console.log("Rejecting friend request:", requestId);
+      return { success: true, message: "Arkadaşlık isteği reddedildi" };
     } catch (err) {
       console.error("Error rejecting friend request:", err);
-      return { success: false, error: "İstek reddedilirken hata oluştu" };
+      return { success: false, error: "Arkadaşlık isteği reddedilirken hata oluştu" };
     }
   };
 
@@ -109,7 +198,9 @@ export const useFriends = () => {
     isLoading,
     error,
     addFriend,
+    removeFriend,
     acceptFriendRequest,
     rejectFriendRequest,
+    refreshFriends, // Manuel yenileme için export ediyoruz
   };
 }; 

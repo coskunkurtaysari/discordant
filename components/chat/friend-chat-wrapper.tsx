@@ -3,42 +3,56 @@
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { ChatWelcome } from "@/components/chat/chat-welcome";
-import { Profile, Conversation } from "@prisma/client";
+import { Profile } from "@prisma/client";
 import { useState, useEffect } from "react";
-import { useSSEConversation } from "@/hooks/use-sse-conversation";
+import { useSocket } from "@/hooks/use-socket";
 import { useToast } from "@/hooks/use-toast";
 
-interface ConversationChatWrapperProps {
+interface FriendChatWrapperProps {
   currentProfile: Profile;
-  conversation: Conversation & {
-    memberOne: {
-      profile: Profile;
-    };
-    memberTwo: {
-      profile: Profile;
-    };
-  };
+  friendProfile: Profile;
   conversationId: string;
+  serverId: string;
 }
 
-export const ConversationChatWrapper = ({
+export const FriendChatWrapper = ({
   currentProfile,
-  conversation,
-  conversationId
-}: ConversationChatWrapperProps) => {
-  const { isConnected, connectionState, error } = useSSEConversation(conversationId, {
-    autoRefresh: true,
-    refreshDelay: 1000
-  });
+  friendProfile,
+  conversationId,
+  serverId
+}: FriendChatWrapperProps) => {
+  const [isConnected, setIsConnected] = useState(false);
+  const socket = useSocket();
   const { toast } = useToast();
 
-  // Diğer üyenin bilgilerini al
-  const otherMember = conversation.memberOne.profile.id === currentProfile.id 
-    ? conversation.memberTwo 
-    : conversation.memberOne;
+  useEffect(() => {
+    if (!socket) return;
+
+    const onConnect = () => {
+      setIsConnected(true);
+      // Friend conversation room'una join ol
+      socket.emit("join-friend-conversation", {
+        conversationId,
+        userId: currentProfile.userId,
+        friendId: friendProfile.userId
+      });
+    };
+
+    const onDisconnect = () => {
+      setIsConnected(false);
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, [socket, conversationId, currentProfile.userId, friendProfile.userId]);
 
   const handleSendMessage = async (content: string, fileUrl?: string) => {
-    if (!isConnected) {
+    if (!socket || !isConnected) {
       toast({
         title: "Bağlantı Hatası",
         description: "Sunucuya bağlanılamıyor",
@@ -48,23 +62,13 @@ export const ConversationChatWrapper = ({
     }
 
     try {
-      // API'ye mesaj gönder
-      const response = await fetch('/api/direct-messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          conversationId,
-          content,
-          fileUrl,
-          memberId: currentProfile.id
-        }),
+      socket.emit("send-friend-message", {
+        conversationId,
+        content,
+        fileUrl,
+        senderId: currentProfile.userId,
+        receiverId: friendProfile.userId
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -77,37 +81,31 @@ export const ConversationChatWrapper = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Connection Status */}
-      {error && (
-        <div className="bg-red-500 text-white p-2 text-center text-sm">
-          {error}
-        </div>
-      )}
-      
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto">
         <ChatWelcome
           type="conversation"
-          name={otherMember.profile.name}
+          name={friendProfile.name}
         />
         <ChatMessages
           member={{
             id: currentProfile.id,
             role: "USER",
             profile: currentProfile,
-            serverId: "",
+            serverId: serverId,
             profileId: currentProfile.id,
             createdAt: currentProfile.createdAt,
             updatedAt: currentProfile.updatedAt
           }}
-          name={otherMember.profile.name}
+          name={friendProfile.name}
           chatId={conversationId}
           type="conversation"
-          apiUrl="/api/direct-messages"
-          socketUrl="/api/socket/conversation"
+          apiUrl="/api/friend-messages"
+          socketUrl="/api/socket/friend-messages"
           socketQuery={{
             conversationId,
-            memberId: currentProfile.id
+            currentUserId: currentProfile.userId,
+            friendId: friendProfile.userId
           }}
           paramKey="conversationId"
           paramValue={conversationId}
@@ -118,12 +116,13 @@ export const ConversationChatWrapper = ({
       {/* Chat Input */}
       <div className="flex-shrink-0">
         <ChatInput
-          name={otherMember.profile.name}
+          name={friendProfile.name}
           type="conversation"
-          apiUrl="/api/direct-messages"
+          apiUrl="/api/friend-messages"
           query={{
             conversationId,
-            memberId: currentProfile.id
+            currentUserId: currentProfile.userId,
+            friendId: friendProfile.userId
           }}
           onSendMessage={handleSendMessage}
         />

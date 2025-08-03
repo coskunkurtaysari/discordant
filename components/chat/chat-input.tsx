@@ -59,6 +59,8 @@ export const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
       await axios.post(url, {
         content: data.content,
         fileUrl: fileUrl || undefined,
+        conversationId: query?.conversationId,
+        memberId: query?.memberId,
         serverId: query?.serverId,
         channelId: query?.channelId,
       });

@@ -88,8 +88,8 @@ model Member {
   role                   MemberRole      @default(GUEST)
   profileId              String
   profile                Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  serverId               String
-  server                 Server          @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  serverId               String?
+  server                 Server?         @relation(fields: [serverId], references: [id], onDelete: Cascade)
   
   onlineStatus           OnlineStatus    @default(OFFLINE)
   lastSeen               DateTime        @default(now())
@@ -176,12 +176,14 @@ model Message {
 }
 
 model Conversation {
-  id          String    @id
+  id          String    @id @default(uuid())
   memberOneId String
   memberOne   Member    @relation("MemberOne", fields: [memberOneId], references: [id], onDelete: Cascade)
   memberTwoId String
   memberTwo   Member    @relation("MemberTwo", fields: [memberTwoId], references: [id], onDelete: Cascade)
   directMessages DirectMessage[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([memberOneId], map: "Conversation_memberOneId_idx")
   @@index([memberTwoId], map: "Conversation_memberTwoId_idx")
@@ -629,4 +631,44 @@ model VisitorSession {
   @@index([isActive], map: "VisitorSession_isActive_idx")
   @@index([lastActivity], map: "VisitorSession_lastActivity_idx")
   @@map("visitor_session")
+}
+
+// Friend model for friend relationships
+model Friend {
+  id        String   @id @default(uuid())
+  userId    String
+  friendId  String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, friendId], map: "Friend_userId_friendId_key")
+  @@index([userId], map: "Friend_userId_idx")
+  @@index([friendId], map: "Friend_friendId_idx")
+  @@map("friend")
+}
+
+// Call model for video/audio calls
+model Call {
+  id          String   @id @default(uuid())
+  roomName    String   @unique
+  callerId    String
+  receiverId  String
+  type        String   // 'video' or 'audio'
+  status      String   // 'initiating', 'active', 'ended', 'missed'
+  
+  // Call metadata
+  duration    Int?     // seconds
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([callerId], map: "Call_callerId_idx")
+  @@index([receiverId], map: "Call_receiverId_idx")
+  @@index([status], map: "Call_status_idx")
+  @@map("call")
 }

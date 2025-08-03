@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, MessageCircle, MoreVertical, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useDMs } from "@/hooks/use-dms";
 export const DMSection = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { conversations, isLoading, error } = useDMs();
+  const router = useRouter();
 
   const filteredConversations = conversations.filter(conversation => {
     const name = getConversationName(conversation);
@@ -112,6 +114,7 @@ export const DMSection = () => {
                   <div
                     key={conversation.id}
                     className="flex items-center justify-between p-3 rounded-md hover:bg-message-hover transition-colors group cursor-pointer"
+                    onClick={() => router.push(`/direct-messages/${conversation.id}`)}
                   >
                     <div className="flex items-center space-x-3">
                       {/* Avatar with Status */}

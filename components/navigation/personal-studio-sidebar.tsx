@@ -6,37 +6,64 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { FriendRequestBadge } from "./friend-request-badge";
 import { useFriends } from "@/hooks/use-friends";
+import { useDMs } from "@/hooks/use-dms";
 import { ActionTooltip } from "@/components/action-tooltip";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 
 type SectionType = "studio" | "friends" | "store" | "dm";
 
 interface PersonalStudioSidebarProps {
-  profile: any;
-  activeSection: SectionType;
-  onSectionChange: (section: SectionType) => void;
-  onClose: () => void;
+  profile?: any;
+  activeSection?: SectionType;
+  onSectionChange?: (section: SectionType) => void;
+  onClose?: () => void;
 }
 
 export const PersonalStudioSidebar = ({ 
   profile, 
-  activeSection, 
-  onSectionChange, 
-  onClose 
+  activeSection = "dm", 
+  onSectionChange = () => {}, 
+  onClose = () => {} 
 }: PersonalStudioSidebarProps) => {
   const { pendingRequests } = useFriends();
+  const { conversations, isLoading } = useDMs();
   const [isDmListOpen, setIsDmListOpen] = useState(true);
+  const router = useRouter();
+  const { userId } = useAuth();
 
-  // Mock conversations data - gerçek uygulamada API'den gelecek
-  const mockConversations = [
-    { id: "1", memberOne: { profile: { name: "Sahte Kullanıcı 1", status: "online" } } },
-    { id: "2", memberTwo: { profile: { name: "Sahte Kullanıcı 2", status: "online" } } },
-    { id: "3", memberOne: { profile: { name: "Sahte Kullanıcı 3", status: "offline" } } },
-    { id: "4", memberTwo: { profile: { name: "Sahte Kullanıcı 4", status: "online" } } },
-    { id: "5", memberOne: { profile: { name: "Sahte Kullanıcı 5", status: "idle" } } },
-    { id: "6", memberTwo: { profile: { name: "Sahte Kullanıcı 6", status: "online" } } },
-    { id: "7", memberOne: { profile: { name: "Sahte Kullanıcı 7", status: "dnd" } } },
-  ];
+  // Karşı tarafın ismini al
+  const getOtherMemberName = (conversation: any) => {
+    if (!userId || !profile) return 'Unknown User';
+    
+    // Mevcut kullanıcının profile ID'si
+    const currentProfileId = profile.id;
+    
+    // Karşı tarafı bul
+    if (conversation.memberOne?.profile?.id === currentProfileId) {
+      return conversation.memberTwo?.profile?.name || 'Unknown User';
+    } else if (conversation.memberTwo?.profile?.id === currentProfileId) {
+      return conversation.memberOne?.profile?.name || 'Unknown User';
+    }
+    
+    return 'Unknown User';
+  };
+
+  // Karşı tarafın avatar harfini al
+  const getOtherMemberAvatar = (conversation: any) => {
+    if (!userId || !profile) return 'U';
+    
+    const currentProfileId = profile.id;
+    
+    if (conversation.memberOne?.profile?.id === currentProfileId) {
+      return conversation.memberTwo?.profile?.name?.charAt(0)?.toUpperCase() || 'U';
+    } else if (conversation.memberTwo?.profile?.id === currentProfileId) {
+      return conversation.memberOne?.profile?.name?.charAt(0)?.toUpperCase() || 'U';
+    }
+    
+    return 'U';
+  };
 
   return (
     <div className="w-64 bg-[#121212] flex flex-col h-full">
@@ -136,35 +163,41 @@ export const PersonalStudioSidebar = ({
       {/* DM List - Toggleable */}
       {isDmListOpen && (
         <div className="flex-1 overflow-y-auto px-2 space-y-1">
-          {mockConversations.map((conversation) => (
-            <div
-              key={conversation.id}
-              className="flex items-center px-2 py-1.5 rounded-md hover:bg-zinc-800 cursor-pointer group"
-            >
-              {/* Avatar with Status */}
-              <div className="relative mr-3">
-                <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm text-zinc-300">
-                  {conversation.memberOne?.profile?.name?.charAt(0)?.toUpperCase() || 
-                   conversation.memberTwo?.profile?.name?.charAt(0)?.toUpperCase() || 'S'}
+          {isLoading ? (
+            <div className="text-zinc-400 text-sm px-2 py-1">Yükleniyor...</div>
+          ) : conversations.length === 0 ? (
+            <div className="text-zinc-400 text-sm px-2 py-1">Henüz DM yok</div>
+          ) : (
+            conversations.map((conversation: any) => (
+              <div
+                key={conversation.id}
+                className="flex items-center px-2 py-1.5 rounded-md hover:bg-zinc-800 cursor-pointer group"
+                onClick={() => router.push(`/direct-messages/${conversation.id}`)}
+              >
+                {/* Avatar with Status */}
+                <div className="relative mr-3">
+                  <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm text-zinc-300">
+                    {getOtherMemberAvatar(conversation)}
+                  </div>
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#121212] ${
+                    conversation.memberOne?.profile?.status === 'online' || conversation.memberTwo?.profile?.status === 'online' ? 'bg-green-500' :
+                    conversation.memberOne?.profile?.status === 'idle' || conversation.memberTwo?.profile?.status === 'idle' ? 'bg-yellow-500' :
+                    conversation.memberOne?.profile?.status === 'dnd' || conversation.memberTwo?.profile?.status === 'dnd' ? 'bg-red-500' :
+                    'bg-zinc-500'
+                  }`} />
                 </div>
-                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#121212] ${
-                  conversation.memberOne?.profile?.status === 'online' || conversation.memberTwo?.profile?.status === 'online' ? 'bg-green-500' :
-                  conversation.memberOne?.profile?.status === 'idle' || conversation.memberTwo?.profile?.status === 'idle' ? 'bg-yellow-500' :
-                  conversation.memberOne?.profile?.status === 'dnd' || conversation.memberTwo?.profile?.status === 'dnd' ? 'bg-red-500' :
-                  'bg-zinc-500'
-                }`} />
-              </div>
 
-              {/* User Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center">
-                  <span className="text-sm font-medium text-white truncate">
-                    {conversation.memberOne?.profile?.name || conversation.memberTwo?.profile?.name || 'Unknown User'}
-                  </span>
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium text-white truncate">
+                      {getOtherMemberName(conversation)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 

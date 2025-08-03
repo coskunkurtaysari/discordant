@@ -1,269 +1,316 @@
 // /app/api/direct-messages/route.ts
 
-import { currentProfile } from "@/lib/current-profile";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { DirectMessage } from "@prisma/client";
-import { NextResponse } from "next/server";
-const MESSAGES_BATCH = 50;
 
-export async function GET(req: Request) {
+// GET /api/direct-messages - Kullanıcının conversation'larını getir
+export async function GET(req: NextRequest) {
   try {
-    const profile = await currentProfile();
+    const { userId } = await auth();
     const { searchParams } = new URL(req.url);
+    const conversationId = searchParams.get("conversationId");
+    const memberId = searchParams.get("memberId");
     const cursor = searchParams.get("cursor");
-    const conversationId = searchParams.get("conversationId");
-    if (!profile) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-    if (!conversationId) {
-      return new NextResponse("Conversation ID missing", { status: 400 });
-    }
-    let messages: DirectMessage[] = [];
-    if (cursor) {
-      messages = await db.directMessage.findMany({
-        take: MESSAGES_BATCH,
-        skip: 1,
-        cursor: {
-          id: cursor,
-        },
-        where: { conversationId },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    } else {
-      messages = await db.directMessage.findMany({
-        take: MESSAGES_BATCH,
-        where: { conversationId },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    }
-    let nextCursor = null;
-    if (messages.length === MESSAGES_BATCH) {
-      nextCursor = messages[MESSAGES_BATCH - 1].id;
-    }
-    return NextResponse.json({ items: messages, nextCursor });
-  } catch (error) {
-    console.log("[DIRECT_MESSAGES_GET]", error);
-    return new NextResponse("Internal error", { status: 500 });
-  }
-}
+    const limit = 10;
 
-export async function POST(req: Request) {
-  try {
-    console.log('[DIRECT_MESSAGES_POST] Request started:', {
-      url: req.url,
-      timestamp: new Date().toISOString()
-    });
-
-    const profile = await currentProfile();
-    const { searchParams } = new URL(req.url);
-    const body = await req.json();
-    
-    const conversationId = searchParams.get("conversationId");
-    const { content, fileUrl } = body;
-
-    console.log('[DIRECT_MESSAGES_POST] Request params:', {
-      profileId: profile?.id,
-      conversationId,
-      hasContent: !!content,
-      hasFileUrl: !!fileUrl
-    });
-
-    if (!profile) {
-      console.error('[DIRECT_MESSAGES_POST] No profile found - user not authenticated');
+    if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    if (!conversationId) {
-      console.error('[DIRECT_MESSAGES_POST] No conversationId provided in request');
-      return new NextResponse("Conversation ID missing", { status: 400 });
-    }
-
-    if (!content && !fileUrl) {
-      console.error('[DIRECT_MESSAGES_POST] No content or file provided');
-      return new NextResponse("Content or file required", { status: 400 });
-    }
-
-    // Validate conversationId format (UUID format)
-    if (!/^[a-f0-9-]{36}$/.test(conversationId)) {
-      console.error('[DIRECT_MESSAGES_POST] Invalid conversationId format:', conversationId);
-      return new NextResponse("Invalid conversation ID format", { status: 400 });
-    }
-
-    // Check if user is part of this conversation
-    console.log('[DIRECT_MESSAGES_POST] Checking conversation access...');
-    const conversation = await db.conversation.findFirst({
-      where: {
-        id: conversationId,
-        OR: [
-          {
-            memberOne: {
-              profileId: profile.id,
-            },
-          },
-          {
-            memberTwo: {
-              profileId: profile.id,
-            },
-          },
-        ],
-      },
-      include: {
-        memberOne: {
-          include: {
-            profile: true,
-          },
-        },
-        memberTwo: {
-          include: {
-            profile: true,
-          },
-        },
-      },
-    });
-
-    if (!conversation) {
-      console.error('[DIRECT_MESSAGES_POST] Conversation not found or user has no access:', {
-        conversationId,
-        profileId: profile.id
-      });
-      return new NextResponse("Conversation not found or access denied", { status: 404 });
-    }
-
-    // Determine which member is sending the message
-    const member = conversation.memberOne.profileId === profile.id 
-      ? conversation.memberOne 
-      : conversation.memberTwo;
-
-    console.log('[DIRECT_MESSAGES_POST] Access verified, creating direct message...');
-
-    // Create the direct message
-    const message = await db.directMessage.create({
-      data: {
-        id: require('crypto').randomUUID(),
-        content: content || "",
-        fileUrl: fileUrl || null,
-        conversationId: conversationId,
-        memberId: member.id,
-        updatedAt: new Date(),
-      },
-      include: {
-        member: {
-          include: {
-            profile: true,
-          },
-        },
-      },
-    });
-
-    console.log('[DIRECT_MESSAGES_POST] Direct message created successfully:', {
-      messageId: message.id,
-      memberId: member.id,
-      conversationId: conversationId
-    });
-
-    // Trigger system message processing for AI workflow (if applicable)
-    try {
-      console.log('[DIRECT_MESSAGES_POST] Checking if agent conversation...');
-      
-      // Check if this conversation involves an AI agent
-      const { db } = await import('@/lib/db');
+    // Eğer conversationId verilmişse, o conversation'ın mesajlarını getir
+    if (conversationId) {
+      // Conversation'ın var olduğunu ve kullanıcının erişim yetkisi olduğunu kontrol et
       const conversation = await db.conversation.findUnique({
         where: { id: conversationId },
         include: {
+          memberOne: { include: { profile: true } },
+          memberTwo: { include: { profile: true } }
+        }
+      });
+
+      if (!conversation) {
+        return new NextResponse("Conversation not found", { status: 404 });
+      }
+
+      // Kullanıcının bu conversation'a erişim yetkisi var mı kontrol et
+      const currentProfile = await db.profile.findUnique({
+        where: { userId }
+      });
+
+      if (!currentProfile) {
+        return new NextResponse("Profile not found", { status: 404 });
+      }
+
+      if (conversation.memberOne.profile.id !== currentProfile.id && 
+          conversation.memberTwo.profile.id !== currentProfile.id) {
+        return new NextResponse("Access denied", { status: 403 });
+      }
+
+      // Mesajları getir
+      const messages = await db.directMessage.findMany({
+        where: { conversationId },
+        include: {
+          member: {
+            include: { profile: true }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        ...(cursor && {
+          cursor: { id: cursor },
+          skip: 1
+        })
+      });
+
+      console.log("[DIRECT_MESSAGES_GET] Found messages:", messages.length);
+      console.log("[DIRECT_MESSAGES_GET] Messages:", messages.map(m => ({
+        id: m.id,
+        content: m.content,
+        memberName: m.member.profile.name,
+        createdAt: m.createdAt
+      })));
+
+      let nextCursor = undefined;
+      if (messages.length === limit) {
+        nextCursor = messages[messages.length - 1].id;
+      }
+
+      return NextResponse.json({
+        items: messages,
+        nextCursor
+      });
+    }
+
+          // ConversationId verilmemişse, kullanıcının tüm conversation'larını getir
+      const conversations = await db.conversation.findMany({
+        where: {
+          OR: [
+            { memberOne: { profile: { userId } } },
+            { memberTwo: { profile: { userId } } }
+          ]
+        },
+        include: {
+          memberOne: {
+            include: { profile: true }
+            },
+          memberTwo: {
+            include: { profile: true }
+          },
+          directMessages: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        },
+        orderBy: {
+          id: "desc"
+        }
+      });
+
+    return NextResponse.json(conversations);
+
+  } catch (error) {
+    console.error("[DIRECT_MESSAGES_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
+  }
+}
+
+// POST /api/direct-messages - Yeni conversation başlat veya mesaj gönder
+export async function POST(req: NextRequest) {
+  try {
+    console.log("[DIRECT_MESSAGES_POST] Starting...");
+    const { userId } = await auth();
+    const { memberTwoId, conversationId, content, fileUrl } = await req.json();
+    
+    console.log("[DIRECT_MESSAGES_POST] Request data:", {
+      userId,
+      memberTwoId,
+      conversationId,
+      hasContent: !!content
+    });
+
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Kullanıcının profilini al
+    const currentProfile = await db.profile.findUnique({
+      where: { userId }
+    });
+
+    if (!currentProfile) {
+      return new NextResponse("Profile not found", { status: 404 });
+    }
+
+        // Eğer conversationId verilmişse, mesaj gönder
+    if (conversationId) {
+      console.log("[DIRECT_MESSAGES_POST] Sending message to conversation:", conversationId);
+      
+      if (!content) {
+        return new NextResponse("Content is required", { status: 400 });
+      }
+
+      // Conversation'ın var olduğunu kontrol et
+      const conversation = await db.conversation.findUnique({
+        where: { id: conversationId },
+        include: {
+          memberOne: {
+            include: { profile: true }
+          },
+          memberTwo: {
+            include: { profile: true }
+          }
+        }
+      });
+
+      if (!conversation) {
+        console.log("[DIRECT_MESSAGES_POST] Conversation not found:", conversationId);
+        return new NextResponse("Conversation not found", { status: 404 });
+      }
+
+      // Kullanıcının bu conversation'a erişim yetkisi var mı kontrol et
+      if (conversation.memberOne.profile.id !== currentProfile.id && 
+          conversation.memberTwo.profile.id !== currentProfile.id) {
+        console.log("[DIRECT_MESSAGES_POST] Access denied for conversation:", conversationId);
+        return new NextResponse("Access denied", { status: 403 });
+      }
+
+      // Member ID'yi bul
+      const member = await db.member.findFirst({
+        where: {
+          profileId: currentProfile.id,
+          OR: [
+            { id: conversation.memberOne.id },
+            { id: conversation.memberTwo.id }
+          ]
+        }
+      });
+
+      if (!member) {
+        console.log("[DIRECT_MESSAGES_POST] Member not found for profile:", currentProfile.id);
+        return new NextResponse("Member not found", { status: 404 });
+      }
+
+      console.log("[DIRECT_MESSAGES_POST] Creating message with member:", member.id);
+      console.log("[DIRECT_MESSAGES_POST] Message content:", content);
+      console.log("[DIRECT_MESSAGES_POST] From user:", currentProfile.name);
+
+      // Mesajı kaydet
+      const message = await db.directMessage.create({
+        data: {
+          id: require('crypto').randomUUID(),
+          content,
+          fileUrl,
+          conversationId,
+          memberId: member.id,
+          updatedAt: new Date()
+        },
+        include: {
+          member: {
+            include: { profile: true }
+          }
+        }
+      });
+
+      console.log("[DIRECT_MESSAGES_POST] Message saved successfully:", {
+        id: message.id,
+        content: message.content,
+        memberName: message.member.profile.name,
+        conversationId: message.conversationId,
+        createdAt: message.createdAt
+      });
+      return NextResponse.json(message);
+    }
+
+    // Eğer memberTwoId verilmişse, yeni conversation başlat
+    if (memberTwoId) {
+      console.log("[DIRECT_MESSAGES_POST] Creating conversation with memberTwoId:", memberTwoId);
+      
+      // Hedef kullanıcının profilini al
+      const targetProfile = await db.profile.findUnique({
+        where: { id: memberTwoId }
+      });
+
+      if (!targetProfile) {
+        console.log("[DIRECT_MESSAGES_POST] Target profile not found for id:", memberTwoId);
+        return new NextResponse("Target user not found", { status: 404 });
+      }
+      
+      console.log("[DIRECT_MESSAGES_POST] Found target profile:", targetProfile.name);
+
+      // Var olan conversation var mı kontrol et
+      const existingConversation = await db.conversation.findFirst({
+        where: {
+          OR: [
+            {
+              memberOne: { profile: { id: currentProfile.id } },
+              memberTwo: { profile: { id: targetProfile.id } }
+            },
+            {
+              memberOne: { profile: { id: targetProfile.id } },
+              memberTwo: { profile: { id: currentProfile.id } }
+            }
+          ]
+        },
+        include: {
           memberOne: { 
-            include: { 
-              profile: { 
-                include: { agentProfile: true } 
-              } 
-            } 
+            include: { profile: true }
           },
           memberTwo: { 
-            include: { 
-              profile: { 
-                include: { agentProfile: true } 
-              } 
-            } 
+            include: { profile: true }
           }
         }
       });
       
-      if (!conversation) {
-        console.log('[DIRECT_MESSAGES_POST] ⚠️ Conversation not found for agent check');
-        return NextResponse.json(message);
+      if (existingConversation) {
+        return NextResponse.json(existingConversation);
       }
+
+      // Yeni conversation oluştur - gerçek versiyon
+      console.log("[DIRECT_MESSAGES_POST] Creating real conversation");
       
-      // Determine if either participant is an AI agent
-      const memberOneIsAgent = !!conversation.memberOne.profile.agentProfile;
-      const memberTwoIsAgent = !!conversation.memberTwo.profile.agentProfile;
-      const isAgentConversation = memberOneIsAgent || memberTwoIsAgent;
-      
-      if (!isAgentConversation) {
-        console.log('[DIRECT_MESSAGES_POST] ✅ Human-to-human conversation, skipping workflow processing');
-        return NextResponse.json(message);
-      }
-      
-      // This is an agent conversation - determine which agent and process accordingly
-      const agentMember = memberOneIsAgent ? conversation.memberOne : conversation.memberTwo;
-      const humanMember = memberOneIsAgent ? conversation.memberTwo : conversation.memberOne;
-      
-      console.log('[DIRECT_MESSAGES_POST] 🤖 Agent conversation detected:', {
-        agentName: agentMember.profile.name,
-        agentType: agentMember.profile.agentProfile?.agentType,
-        humanName: humanMember.profile.name,
-        messageFromHuman: member.id === humanMember.id
-      });
-      
-      // Only process if the message is FROM the human TO the agent
-      if (member.id !== humanMember.id) {
-        console.log('[DIRECT_MESSAGES_POST] ✅ Message from agent, no processing needed');
-        return NextResponse.json(message);
-      }
-      
-      // Process agent conversation in background
-      const { createAgentDirectMessage } = await import('@/lib/system/agent-conversations');
-      
-      setImmediate(async () => {
-        try {
-          await createAgentDirectMessage(conversationId, message, agentMember.profile.agentProfile, req);
-          console.log('[DIRECT_MESSAGES_POST] ✅ Agent conversation processing completed');
-        } catch (agentError) {
-          console.error('[DIRECT_MESSAGES_POST] ❌ Agent conversation processing failed:', agentError);
+      // Member'ları oluştur (server olmadan)
+      const memberOne = await db.member.create({
+        data: {
+          id: require('crypto').randomUUID(),
+          profileId: currentProfile.id,
+          role: "GUEST"
         }
       });
-      
-      console.log('[DIRECT_MESSAGES_POST] ✅ Agent conversation processing initiated');
-      
-    } catch (importError) {
-      console.error('[DIRECT_MESSAGES_POST] ❌ Failed to process agent conversation:', importError);
+
+      const memberTwo = await db.member.create({
+        data: {
+          id: require('crypto').randomUUID(),
+          profileId: targetProfile.id,
+          role: "GUEST"
+        }
+      });
+
+      // Conversation oluştur
+      const conversation = await db.conversation.create({
+        data: {
+          id: require('crypto').randomUUID(),
+          memberOneId: memberOne.id,
+          memberTwoId: memberTwo.id
+        },
+        include: {
+          memberOne: {
+            include: { profile: true }
+          },
+          memberTwo: {
+            include: { profile: true }
+          }
+        }
+      });
+
+      console.log("[DIRECT_MESSAGES_POST] Conversation created:", conversation.id);
+      return NextResponse.json(conversation);
     }
 
-    // Return the created message
-    return NextResponse.json(message);
+    return new NextResponse("Invalid request", { status: 400 });
 
   } catch (error) {
-    console.error("[DIRECT_MESSAGES_POST] Error details:", {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
+    console.error("[DIRECT_MESSAGES_POST]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

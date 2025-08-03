@@ -1,28 +1,26 @@
-import { currentProfile } from "@/lib/current-profile";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
 
-export async function PATCH(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const profile = await currentProfile();
-    const { name } = await req.json();
-
-    if (!profile) {
+    const { userId } = await auth();
+    
+    if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const updatedProfile = await db.profile.update({
-      where: {
-        id: profile.id,
-      },
-      data: {
-        name,
-      },
+    const profile = await db.profile.findUnique({
+      where: { userId }
     });
 
-    return NextResponse.json(updatedProfile);
+    if (!profile) {
+      return new NextResponse("Profile not found", { status: 404 });
+    }
+
+    return NextResponse.json(profile);
   } catch (error) {
-    console.log("[PROFILE_PATCH]", error);
+    console.error("[PROFILE_GET]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
