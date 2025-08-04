@@ -7,10 +7,15 @@ import { Separator } from "@/components/ui/separator";
 import { FriendRequestBadge } from "./friend-request-badge";
 import { useFriends } from "@/hooks/use-friends";
 import { useDMs } from "@/hooks/use-dms";
+import { useQuickSwitcher } from "@/hooks/use-quick-switcher";
 import { ActionTooltip } from "@/components/action-tooltip";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { QuickSwitcherModal } from "./quick-switcher-modal";
+import { QuickSwitcherInput } from "./quick-switcher-input";
+import { QuickSwitcherResultList } from "./quick-switcher-result-list";
+import { QuickSwitcherKeyboardHints } from "./quick-switcher-keyboard-hints";
 
 type SectionType = "studio" | "friends" | "store" | "dm";
 
@@ -32,6 +37,17 @@ export const PersonalStudioSidebar = ({
   const [isDmListOpen, setIsDmListOpen] = useState(true);
   const router = useRouter();
   const { userId } = useAuth();
+  const {
+    isOpen: isQuickSwitcherOpen,
+    query,
+    setQuery,
+    selectedIndex,
+    results,
+    handleKeyDown,
+    handleSelect,
+    handleClose: handleQuickSwitcherClose,
+    handleOpen: handleQuickSwitcherOpen
+  } = useQuickSwitcher();
 
   // Karşı tarafın ismini al
   const getOtherMemberName = (conversation: any) => {
@@ -76,11 +92,12 @@ export const PersonalStudioSidebar = ({
       <div className="p-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input 
-            type="text" 
-            className="w-full pl-10 pr-3 py-2 rounded-md bg-zinc-800 text-sm text-white placeholder-zinc-400 border border-zinc-700 focus:outline-none focus:ring-1 focus:ring-green-500"
-            placeholder="Sohbet bul ya da başlat" 
-          />
+          <button
+            onClick={handleQuickSwitcherOpen}
+            className="w-full pl-10 pr-3 py-2 rounded-md bg-zinc-800 text-sm text-white placeholder-zinc-400 border border-zinc-700 focus:outline-none focus:ring-1 focus:ring-green-500 text-left"
+          >
+            Sohbet bul ya da başlat
+          </button>
         </div>
       </div>
 
@@ -215,6 +232,21 @@ export const PersonalStudioSidebar = ({
           </div>
         </div>
       </div>
+
+      {/* Quick Switcher Modal */}
+      <QuickSwitcherModal open={isQuickSwitcherOpen} onClose={handleQuickSwitcherClose}>
+        <QuickSwitcherInput
+          value={query}
+          onChange={setQuery}
+          onKeyDown={handleKeyDown}
+        />
+        <QuickSwitcherResultList
+          results={results}
+          selectedIndex={selectedIndex}
+          onSelect={handleSelect}
+        />
+        <QuickSwitcherKeyboardHints />
+      </QuickSwitcherModal>
     </div>
   );
 }; 
